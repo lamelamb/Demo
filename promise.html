@@ -1,0 +1,112 @@
+
+<html>
+    <head>自定义 promise </head>
+    <body>
+    </body>
+    <script>
+        // 自造一个promise
+        /**
+         *  var p = new Promise(function(resolve ,reject){
+         *    resolve('信息')；
+         *   })
+         *   p.then(function(data){
+         *     console.log(`data=$data`)
+         *   })
+         * 
+         * */
+
+        // promise 是一个对象, 返回对象有then 方法，状态改变后调用回调 
+
+        // function myPromise(f){
+        //   var func = f;
+        //   var value;
+        //   var reason;
+        //   var then_cbs;
+
+        //   var resolve = function (data){
+        //       value = data;
+        //       then_cbs(value);
+        //   }
+        //   var reject = function (data) {
+        //       reason = data;
+        //   }
+
+        //   func(resolve, reject);
+        //   this.then = function(cb){
+        //     then_cbs = cb;
+        //   }
+        // }
+        // var p = new myPromise(function(resolve ,reject) {
+        //     console.log('2s 后');
+        //     setTimeout(resolve, 2000, 'test resolve');
+        // })
+        // p.then(function(data){
+        //     console.log('data= ' + data);
+        // }) 
+       
+        // var then_cbs =[];
+        // 改善1 增加多个then 回调 ， 链式调用
+        function myPromise(f){
+          var func = f;
+          var state = 'pending'; // 只可能是pending， fullfilled, rejected
+          var reason;
+          // 将 then_cbs 设置成一个全局的变量
+          arguments.callee.then_cbs ? null : arguments.callee.then_cbs=[];
+          var then_cbs = arguments.callee.then_cbs;
+
+          var pInstance = this;
+          var resolve = function (data){
+              if(!then_cbs.length) return;
+              // 先入先出
+              var then_cb = then_cbs.shift();
+              var then_cb_vlaue =  then_cb(data);
+              pInstance.state  = "fullfilled";
+              
+              return then_cb_vlaue;
+              
+          }
+          var reject = function (data) {
+              reason = data;
+          }
+
+          func(resolve, reject); // 首先执行传入的匿名函数，这个部分是同步的
+          this.state = state;
+          this.then = function(cb){
+            then_cbs.push(cb);
+            return this; 
+          }
+        }
+        
+
+
+        // 注意这里是new 调用，所以返回的是一个myPromise 的实例，return 省略了
+        var p = new myPromise(function(resolve ,reject) {
+            console.log('3s 后');
+            setTimeout(resolve, 3000, 'test resolve');
+        })
+        p.then(function(data){
+            console.log('data= ' + data);
+            return new myPromise(function(resolve ,reject) {
+                    console.log('4s 后');
+                  setTimeout(resolve, 2000, '新的p 的数据');
+                 })
+        }).then(function(data){
+            console.log('第三个data= ' + data);
+            return new myPromise(function(resolve ,reject) {
+                    console.log('2s 后');
+                  setTimeout(resolve, 2000, '第三个p 的数据');
+                 })
+
+        });
+
+        
+        
+
+
+    </script>
+</html>
+
+
+
+
+
